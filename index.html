@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Farm AI Builder — AI-powered farming assistant for Indian farmers. Get crop recommendations, market prices, disease detection, and smart farming advice.">
+  <meta name="keywords" content="farming, agriculture, India, crops, AI, smart farming, mandi prices, crop disease">
+  <meta name="author" content="Farm AI Builder">
+  <title>Farm AI Builder — Smart Farming for India 🌾</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌾</text></svg>">
+</head>
+<body>
+
+  <!-- Animated Background -->
+  <div class="animated-bg">
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
+    <div class="orb orb-4"></div>
+    <div class="grid-overlay"></div>
+    <div class="noise-overlay"></div>
+  </div>
+
+  <!-- Floating Particles -->
+  <canvas id="particleCanvas"></canvas>
+
+  <!-- ══════════════ HEADER ══════════════ -->
+  <header class="app-header" id="appHeader">
+    <div class="header-left">
+      <!-- Animated AI Logo -->
+      <div class="logo-container" id="logoContainer">
+        <svg class="logo-svg" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="logoGrad1" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" style="stop-color:#10b981">
+                <animate attributeName="stop-color" values="#10b981;#22d3ee;#a78bfa;#10b981" dur="4s" repeatCount="indefinite"/>
+              </stop>
+              <stop offset="100%" style="stop-color:#22d3ee">
+                <animate attributeName="stop-color" values="#22d3ee;#a78bfa;#10b981;#22d3ee" dur="4s" repeatCount="indefinite"/>
+              </stop>
+            </linearGradient>
+            <linearGradient id="logoGrad2" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" style="stop-color:#8b5cf6">
+                <animate attributeName="stop-color" values="#8b5cf6;#ec4899;#f59e0b;#8b5cf6" dur="5s" repeatCount="indefinite"/>
+              </stop>
+              <stop offset="100%" style="stop-color:#ec4899">
+                <animate attributeName="stop-color" values="#ec4899;#f59e0b;#8b5cf6;#ec4899" dur="5s" repeatCount="indefinite"/>
+              </stop>
+            </linearGradient>
+            <linearGradient id="logoGrad3" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" style="stop-color:#06b6d4">
+                <animate attributeName="stop-color" values="#06b6d4;#8b5cf6;#f43f5e;#06b6d4" dur="6s" repeatCount="indefinite"/>
+              </stop>
+              <stop offset="100%" style="stop-color:#a855f7">
+                <animate attributeName="stop-color" values="#a855f7;#f43f5e;#06b6d4;#a855f7" dur="6s" repeatCount="indefinite"/>
+              </stop>
+            </linearGradient>
+            <filter id="glow">
+              <feGaussianBlur stdDeviation="2.5" result="coloredBlur"/>
+              <feMerge>
+                <feMergeNode in="coloredBlur"/>
+                <feMergeNode in="SourceGraphic"/>
+              </feMerge>
+            </filter>
+            <filter id="softGlow">
+              <feGaussianBlur stdDeviation="4" result="coloredBlur"/>
+              <feMerge>
+                <feMergeNode in="coloredBlur"/>
+                <feMergeNode in="SourceGraphic"/>
+              </feMerge>
+            </filter>
+          </defs>
+          <!-- Outer Curved Arcs -->
+          <path class="logo-arc" d="M 20 60 Q 60 8, 100 60" fill="none" stroke="url(#logoGrad2)" stroke-width="2.5" stroke-linecap="round" filter="url(#glow)"/>
+          <path class="logo-arc logo-arc-2" d="M 20 60 Q 60 112, 100 60" fill="none" stroke="url(#logoGrad3)" stroke-width="2.5" stroke-linecap="round" filter="url(#glow)"/>
+          <!-- Diamond/Star shape -->
+          <g class="logo-diamond" filter="url(#softGlow)">
+            <polygon points="60,24 74,52 60,80 46,52" fill="url(#logoGrad1)" opacity="0.85"/>
+            <polygon points="60,30 70,52 60,74 50,52" fill="url(#logoGrad1)" opacity="0.4"/>
+          </g>
+          <!-- Star sparkle points -->
+          <circle class="logo-star" cx="60" cy="18" r="3.5" fill="url(#logoGrad1)" filter="url(#glow)"/>
+          <circle class="logo-star" cx="80" cy="60" r="3" fill="url(#logoGrad2)" filter="url(#glow)" style="animation-delay: 0.5s"/>
+          <circle class="logo-star" cx="40" cy="60" r="3" fill="url(#logoGrad3)" filter="url(#glow)" style="animation-delay: 1.0s"/>
+          <circle class="logo-star" cx="60" cy="88" r="2.5" fill="url(#logoGrad2)" filter="url(#glow)" style="animation-delay: 0.3s"/>
+          <!-- Tiny orbiting dots -->
+          <circle class="logo-orbit" cx="60" cy="60" r="2" fill="#22d3ee" filter="url(#glow)"/>
+          <circle class="logo-orbit logo-orbit-2" cx="60" cy="60" r="1.5" fill="#a78bfa" filter="url(#glow)"/>
+        </svg>
+      </div>
+      <div>
+        <div class="logo-text">Farm AI <span>Builder</span></div>
+        <div class="logo-tagline">Smart Farming • India</div>
+      </div>
+    </div>
+
+    <nav class="nav-tabs" id="navTabs">
+      <div class="nav-indicator" id="navIndicator"></div>
+      <button class="nav-tab active" data-page="dashboard" id="nav-dashboard">
+        <span class="tab-icon">📊</span>
+        <span class="tab-label">Dashboard</span>
+      </button>
+      <button class="nav-tab" data-page="assistant" id="nav-assistant">
+        <span class="tab-icon">🤖</span>
+        <span class="tab-label">AI Assistant</span>
+      </button>
+    </nav>
+
+    <div class="header-right">
+      <div class="header-time" id="headerTime"></div>
+      <button class="theme-toggle" id="themeToggle" title="Toggle Theme" aria-label="Toggle dark/light mode">
+        <span class="theme-icon">🌙</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- ══════════════ MAIN ══════════════ -->
+  <main class="main-content">
+
+    <!-- ────── DASHBOARD PAGE ────── -->
+    <section class="page active" id="page-dashboard">
+
+      <!-- Welcome Hero -->
+      <div class="welcome-hero">
+        <div class="hero-badge">🌾 AI-Powered Agriculture Platform</div>
+        <h1>Welcome to <span class="gradient-text">Farm AI Builder</span></h1>
+        <p>AI-powered insights for smarter farming across India. Explore states, crops, market prices, and get personalized advice.</p>
+      </div>
+
+      <!-- Stats Strip -->
+      <div class="stats-strip">
+        <div class="stat-card" id="statCard1">
+          <div class="stat-icon-wrap"><span class="stat-icon">🏞️</span></div>
+          <div class="stat-info">
+            <div class="stat-value" id="statStates">0</div>
+            <div class="stat-label">States Covered</div>
+          </div>
+          <div class="stat-spark"></div>
+        </div>
+        <div class="stat-card" id="statCard2">
+          <div class="stat-icon-wrap"><span class="stat-icon">🌾</span></div>
+          <div class="stat-info">
+            <div class="stat-value" id="statCrops">0</div>
+            <div class="stat-label">Crop Varieties</div>
+          </div>
+          <div class="stat-spark"></div>
+        </div>
+        <div class="stat-card" id="statCard3">
+          <div class="stat-icon-wrap"><span class="stat-icon">🏪</span></div>
+          <div class="stat-info">
+            <div class="stat-value" id="statMandis">0</div>
+            <div class="stat-label">Mandi Locations</div>
+          </div>
+          <div class="stat-spark"></div>
+        </div>
+        <div class="stat-card" id="statCard4">
+          <div class="stat-icon-wrap"><span class="stat-icon">📈</span></div>
+          <div class="stat-info">
+            <div class="stat-value" id="statPrices">0</div>
+            <div class="stat-label">Live Prices</div>
+          </div>
+          <div class="stat-spark"></div>
+        </div>
+      </div>
+
+      <!-- Season Cards -->
+      <div class="section-header">
+        <div>
+          <h2 class="section-title"><span class="icon">📅</span> Farming Seasons</h2>
+          <p class="section-subtitle">Select a season to filter crops and data</p>
+        </div>
+      </div>
+      <div class="season-strip" id="seasonStrip">
+        <div class="season-card" data-season="kharif">
+          <div class="season-accent kharif-accent"></div>
+          <div class="season-icon-wrap">🌧️</div>
+          <div class="season-info">
+            <h3>Kharif Season</h3>
+            <p>June – October</p>
+            <span class="season-tag">Monsoon Crops</span>
+          </div>
+        </div>
+        <div class="season-card" data-season="rabi">
+          <div class="season-accent rabi-accent"></div>
+          <div class="season-icon-wrap">❄️</div>
+          <div class="season-info">
+            <h3>Rabi Season</h3>
+            <p>November – April</p>
+            <span class="season-tag">Winter Crops</span>
+          </div>
+        </div>
+        <div class="season-card" data-season="zaid">
+          <div class="season-accent zaid-accent"></div>
+          <div class="season-icon-wrap">☀️</div>
+          <div class="season-info">
+            <h3>Zaid Season</h3>
+            <p>March – June</p>
+            <span class="season-tag">Summer Crops</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Search & Filters -->
+      <div class="controls-bar" id="controlsBar">
+        <div class="search-box">
+          <span class="search-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
+            </svg>
+          </span>
+          <input type="text" id="searchInput" placeholder="Search states, crops, or mandis..." autocomplete="off">
+          <kbd class="search-kbd">Ctrl+K</kbd>
+        </div>
+        <div class="filter-group">
+          <button class="filter-btn active" data-category="all" id="filterAll">🌐 All</button>
+          <button class="filter-btn" data-category="food">🌾 Food</button>
+          <button class="filter-btn" data-category="cash">💰 Cash</button>
+          <button class="filter-btn" data-category="plantation">🌴 Plantation</button>
+          <button class="filter-btn" data-category="horticulture">🍎 Horticulture</button>
+        </div>
+      </div>
+
+      <!-- State Detail Panel (hidden initially) -->
+      <div class="state-detail" id="stateDetail">
+        <div class="detail-header">
+          <h2 id="detailStateName">📍 State</h2>
+          <button class="detail-close" id="detailClose" title="Close">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+          </button>
+        </div>
+        <div class="detail-grid" id="detailGrid">
+          <!-- Filled dynamically -->
+        </div>
+      </div>
+
+      <!-- States Grid -->
+      <div class="section-header">
+        <div>
+          <h2 class="section-title"><span class="icon">🗺️</span> Indian States</h2>
+          <p class="section-subtitle">Select a state to view agricultural details</p>
+        </div>
+        <div class="state-count" id="stateCount"></div>
+      </div>
+      <div class="states-grid" id="statesGrid">
+        <!-- Filled dynamically -->
+      </div>
+
+      <!-- Market Prices -->
+      <div class="market-section" id="marketSection">
+        <div class="section-header">
+          <div>
+            <h2 class="section-title"><span class="icon">💹</span> Market Prices</h2>
+            <p class="section-subtitle">Latest MSP & Mandi prices (₹ per quintal)</p>
+          </div>
+        </div>
+        <div class="price-table-container">
+          <table class="price-table">
+            <thead>
+              <tr>
+                <th>Crop</th>
+                <th>Category</th>
+                <th>Price (₹/qtl)</th>
+                <th>Trend</th>
+                <th>Change</th>
+              </tr>
+            </thead>
+            <tbody id="priceTableBody">
+              <!-- Filled dynamically -->
+            </tbody>
+          </table>
+          <div class="table-footer">
+            <span id="priceCount">Showing 0 of 0</span>
+            <div class="table-footer-btns">
+              <button id="pricePrev" disabled>← Prev</button>
+              <button id="priceNext">Next →</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Mandi Locations -->
+      <div class="section-header">
+        <div>
+          <h2 class="section-title"><span class="icon">🏪</span> Mandi Locations</h2>
+          <p class="section-subtitle">Find nearest agricultural market in your region</p>
+        </div>
+      </div>
+      <div class="mandi-grid" id="mandiGrid">
+        <!-- Filled dynamically -->
+      </div>
+
+    </section>
+
+    <!-- ────── AI ASSISTANT PAGE ────── -->
+    <section class="page" id="page-assistant">
+
+      <div class="welcome-hero" style="padding-bottom: 20px">
+        <div class="hero-badge">🤖 Agricultural Intelligence Engine</div>
+        <h1><span class="gradient-text">AI Farm Assistant</span></h1>
+        <p>Ask farming questions or upload crop images for disease detection and smart recommendations.</p>
+      </div>
+
+      <div class="ai-page-layout">
+        <!-- Chat Container -->
+        <div class="chat-container">
+          <div class="chat-header">
+            <div class="chat-header-dot-wrap">
+              <div class="chat-header-dot"></div>
+              <div class="chat-header-dot-ring"></div>
+            </div>
+            <div>
+              <h3>Farm AI Chat</h3>
+              <p>Powered by Agricultural Intelligence</p>
+            </div>
+            <button class="chat-clear-btn" id="chatClear" title="Clear chat">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
+            </button>
+          </div>
+
+          <div class="chat-messages" id="chatMessages">
+            <!-- Welcome message -->
+            <div class="chat-message ai">
+              <div class="msg-avatar ai">🌱</div>
+              <div class="msg-bubble">
+                <strong>Namaste! 🙏</strong><br><br>
+                I'm your <strong>Farm AI Assistant</strong>. I can help you with:<br><br>
+                🌾 Crop recommendations<br>
+                🐛 Pest & disease management<br>
+                🧪 Fertilizer advice<br>
+                🌦️ Weather advisory<br>
+                💧 Irrigation planning<br>
+                🏛️ Government schemes<br><br>
+                Ask me anything about farming!
+              </div>
+            </div>
+          </div>
+
+          <!-- Quick Actions -->
+          <div class="quick-actions" id="quickActions">
+            <button class="quick-chip" data-query="How to control pests in rice?">🐛 Pest Control</button>
+            <button class="quick-chip" data-query="What fertilizer should I use?">🧪 Fertilizer</button>
+            <button class="quick-chip" data-query="Tell me about soil health">🌍 Soil Health</button>
+            <button class="quick-chip" data-query="Weather tips for farming">🌦️ Weather</button>
+            <button class="quick-chip" data-query="Best irrigation method?">💧 Irrigation</button>
+            <button class="quick-chip" data-query="Government schemes for farmers">🏛️ Schemes</button>
+            <button class="quick-chip" data-query="How to start organic farming?">🌿 Organic</button>
+          </div>
+
+          <div class="chat-input-area">
+            <input type="text" class="chat-input" id="chatInput" placeholder="Ask a farming question..." autocomplete="off">
+            <button class="chat-send-btn" id="chatSend" title="Send">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="m22 2-7 20-4-9-9-4z"/><path d="m22 2-11 11"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <!-- Image Upload Panel -->
+        <div class="upload-panel">
+          <div class="upload-header">
+            <h3>📸 Crop Disease Scanner</h3>
+            <p>Upload a crop image for AI-powered analysis</p>
+          </div>
+
+          <div class="upload-body">
+            <div class="upload-zone" id="uploadZone">
+              <div class="upload-anim">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17,8 12,3 7,8"/><line x1="12" y1="3" x2="12" y2="15"/>
+                </svg>
+              </div>
+              <h4>Drop Image Here</h4>
+              <p>or click to browse files</p>
+              <p class="upload-formats">Supports JPG, PNG, WebP</p>
+              <input type="file" id="fileInput" accept="image/*" style="display:none">
+            </div>
+
+            <div class="upload-preview" id="uploadPreview">
+              <img class="preview-image" id="previewImage" alt="Uploaded crop image">
+              <button class="analyze-btn" id="analyzeBtn">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                  <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/><path d="M11 8v6M8 11h6"/>
+                </svg>
+                Analyze Crop Image
+              </button>
+            </div>
+
+            <div class="disease-result" id="diseaseResult">
+              <!-- Filled dynamically -->
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Footer -->
+  <footer class="app-footer">
+    <div class="footer-content">
+      <div class="footer-brand">🌾 Farm AI Builder</div>
+      <div class="footer-text">Built with ❤️ for Indian Farmers • Data for demonstration purposes</div>
+      <div class="footer-links">
+        <span>Ctrl+K to Search</span>
+        <span>•</span>
+        <span id="currentYear"></span>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Scripts -->
+  <script src="data.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
