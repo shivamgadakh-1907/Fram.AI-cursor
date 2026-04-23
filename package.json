@@ -1,0 +1,29 @@
+{
+  "name": "fram.ai-cursor",
+  "version": "1.0.0",
+  "description": "",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js",
+    "test": "echo \"No tests configured\""
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/shivamgadakh-1907/Fram.AI-cursor.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/shivamgadakh-1907/Fram.AI-cursor/issues"
+  },
+  "homepage": "https://github.com/shivamgadakh-1907/Fram.AI-cursor#readme",
+  "dependencies": {
+    "axios": "^1.15.2",
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1"
+  }
+}

@@ -1,0 +1,22 @@
+[
+  { "id": "mp-001", "name": "Azadpur APMC", "address": "Azadpur, New Delhi, Delhi", "state": "Delhi", "phone": "+91-11-2767-1234", "lat": 28.7176, "lng": 77.1726, "cropsTraded": ["Onion", "Potato", "Tomato", "Apple"] },
+  { "id": "mp-002", "name": "Khanna Grain Market", "address": "Khanna, Ludhiana, Punjab", "state": "Punjab", "phone": "+91-161-509-1188", "lat": 30.7053, "lng": 76.2210, "cropsTraded": ["Wheat", "Rice", "Maize"] },
+  { "id": "mp-003", "name": "Lasalgaon APMC", "address": "Lasalgaon, Nashik, Maharashtra", "state": "Maharashtra", "phone": "+91-2550-266-521", "lat": 20.1485, "lng": 74.2373, "cropsTraded": ["Onion", "Tomato", "Pomegranate"] },
+  { "id": "mp-004", "name": "Vashi APMC", "address": "Vashi, Navi Mumbai, Maharashtra", "state": "Maharashtra", "phone": "+91-22-2784-1155", "lat": 19.0765, "lng": 72.9982, "cropsTraded": ["Vegetables", "Fruits", "Grains"] },
+  { "id": "mp-005", "name": "Indore Mandi", "address": "Lasudia Mori, Indore, Madhya Pradesh", "state": "Madhya Pradesh", "phone": "+91-731-257-3344", "lat": 22.7533, "lng": 75.8937, "cropsTraded": ["Soybean", "Wheat", "Gram"] },
+  { "id": "mp-006", "name": "Neemuch Mandi", "address": "Neemuch, Madhya Pradesh", "state": "Madhya Pradesh", "phone": "+91-7423-225-390", "lat": 24.4738, "lng": 74.8720, "cropsTraded": ["Garlic", "Coriander", "Wheat"] },
+  { "id": "mp-007", "name": "Unjha APMC", "address": "Unjha, Mehsana, Gujarat", "state": "Gujarat", "phone": "+91-2767-253-015", "lat": 23.8012, "lng": 72.3919, "cropsTraded": ["Cumin", "Fennel", "Castor"] },
+  { "id": "mp-008", "name": "Koyambedu Market", "address": "Koyambedu, Chennai, Tamil Nadu", "state": "Tamil Nadu", "phone": "+91-44-2479-4000", "lat": 13.0722, "lng": 80.2059, "cropsTraded": ["Vegetables", "Banana", "Flowers"] },
+  { "id": "mp-009", "name": "Bengaluru APMC Yard", "address": "Yeshwanthpur, Bengaluru, Karnataka", "state": "Karnataka", "phone": "+91-80-2337-5610", "lat": 13.0289, "lng": 77.5530, "cropsTraded": ["Tomato", "Onion", "Ragi"] },
+  { "id": "mp-010", "name": "Guntur Mirchi Yard", "address": "Guntur, Andhra Pradesh", "state": "Andhra Pradesh", "phone": "+91-863-223-4190", "lat": 16.3067, "lng": 80.4365, "cropsTraded": ["Chilli", "Cotton", "Maize"] },
+  { "id": "mp-011", "name": "Warangal Market Yard", "address": "Warangal, Telangana", "state": "Telangana", "phone": "+91-870-256-1103", "lat": 17.9689, "lng": 79.5941, "cropsTraded": ["Cotton", "Rice", "Turmeric"] },
+  { "id": "mp-012", "name": "Lucknow Mandi", "address": "Dubagga, Lucknow, Uttar Pradesh", "state": "Uttar Pradesh", "phone": "+91-522-241-2254", "lat": 26.8840, "lng": 80.8903, "cropsTraded": ["Wheat", "Rice", "Potato"] },
+  { "id": "mp-013", "name": "Kanpur Mandi", "address": "Naubasta, Kanpur, Uttar Pradesh", "state": "Uttar Pradesh", "phone": "+91-512-260-1488", "lat": 26.4499, "lng": 80.3319, "cropsTraded": ["Grains", "Pulses", "Vegetables"] },
+  { "id": "mp-014", "name": "Jaipur Mandi", "address": "Muhana, Jaipur, Rajasthan", "state": "Rajasthan", "phone": "+91-141-298-0090", "lat": 26.8016, "lng": 75.7637, "cropsTraded": ["Mustard", "Gram", "Bajra"] },
+  { "id": "mp-015", "name": "Karnal Grain Market", "address": "Karnal, Haryana", "state": "Haryana", "phone": "+91-184-227-9042", "lat": 29.6857, "lng": 76.9905, "cropsTraded": ["Rice", "Wheat", "Mustard"] },
+  { "id": "mp-016", "name": "Patna Mandi", "address": "Mithapur, Patna, Bihar", "state": "Bihar", "phone": "+91-612-224-0041", "lat": 25.5941, "lng": 85.1376, "cropsTraded": ["Wheat", "Rice", "Lentil"] },
+  { "id": "mp-017", "name": "Raipur Mandi", "address": "Raipur, Chhattisgarh", "state": "Chhattisgarh", "phone": "+91-771-242-5121", "lat": 21.2514, "lng": 81.6296, "cropsTraded": ["Rice", "Pulses", "Maize"] },
+  { "id": "mp-018", "name": "Cuttack Mandi", "address": "Cuttack, Odisha", "state": "Odisha", "phone": "+91-671-230-1144", "lat": 20.4625, "lng": 85.8828, "cropsTraded": ["Rice", "Groundnut", "Vegetables"] },
+  { "id": "mp-019", "name": "Siliguri Mandi", "address": "Siliguri, West Bengal", "state": "West Bengal", "phone": "+91-353-251-0072", "lat": 26.7271, "lng": 88.3953, "cropsTraded": ["Tea", "Rice", "Potato"] },
+  { "id": "mp-020", "name": "Guwahati Market Yard", "address": "Guwahati, Assam", "state": "Assam", "phone": "+91-361-255-1147", "lat": 26.1445, "lng": 91.7362, "cropsTraded": ["Tea", "Rice", "Jute"] }
+]

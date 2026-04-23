@@ -150,7 +150,7 @@
           <div class="stat-icon-wrap"><span class="stat-icon">🏪</span></div>
           <div class="stat-info">
             <div class="stat-value" id="statMandis">0</div>
-            <div class="stat-label">Mandi Locations</div>
+            <div class="stat-label">Marketplace Locations</div>
           </div>
           <div class="stat-spark"></div>
         </div>
@@ -282,12 +282,65 @@
       <!-- Mandi Locations -->
       <div class="section-header">
         <div>
-          <h2 class="section-title"><span class="icon">🏪</span> Mandi Locations</h2>
-          <p class="section-subtitle">Find nearest agricultural market in your region</p>
+          <h2 class="section-title"><span class="icon">🏪</span> Marketplaces</h2>
+          <p class="section-subtitle">Existing marketplace directory (formerly mandi locations)</p>
         </div>
       </div>
       <div class="mandi-grid" id="mandiGrid">
         <!-- Filled dynamically -->
+      </div>
+
+      <!-- Nearby Markets -->
+      <div class="section-header">
+        <div>
+          <h2 class="section-title"><span class="icon">📍</span> Nearby Markets</h2>
+          <p class="section-subtitle">Location-based nearby marketplace discovery with live prices</p>
+        </div>
+      </div>
+      <div class="nearby-market-shell">
+        <div class="nearby-controls">
+          <button class="filter-btn active" id="viewMapBtn">🗺️ Map View</button>
+          <button class="filter-btn" id="viewListBtn">📋 List View</button>
+          <button class="filter-btn" id="detectLocationBtn">📡 Use My Location</button>
+          <span class="nearby-status" id="locationStatus">Location not detected yet.</span>
+        </div>
+        <div class="manual-location-panel hidden" id="manualLocationPanel">
+          <label>
+            Latitude
+            <input type="number" step="0.000001" id="manualLat" placeholder="e.g. 28.6139">
+          </label>
+          <label>
+            Longitude
+            <input type="number" step="0.000001" id="manualLng" placeholder="e.g. 77.2090">
+          </label>
+          <button class="filter-btn" id="applyManualLocationBtn">Apply Location</button>
+        </div>
+        <div id="nearbyMapContainer" class="nearby-map-container"></div>
+        <div id="nearbyListContainer" class="nearby-list-container hidden"></div>
+      </div>
+
+      <!-- Selected Market Live Prices -->
+      <div class="market-section" id="liveMarketSection">
+        <div class="section-header">
+          <div>
+            <h2 class="section-title"><span class="icon">💹</span> Live Market Prices</h2>
+            <p class="section-subtitle">Agmarknet-linked data (or cached fallback) for selected marketplace</p>
+          </div>
+        </div>
+        <div class="price-table-container">
+          <table class="price-table">
+            <thead>
+              <tr>
+                <th>Crop</th>
+                <th>Price (₹/qtl)</th>
+                <th>Last Updated</th>
+              </tr>
+            </thead>
+            <tbody id="livePriceTableBody">
+              <tr><td colspan="3" class="no-results">Select a nearby marketplace to view live prices.</td></tr>
+            </tbody>
+          </table>
+        </div>
       </div>
 
     </section>

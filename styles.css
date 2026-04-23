@@ -1846,3 +1846,90 @@ body {
   opacity: 1;
   transform: translateY(0);
 }
+
+/* ══════════════ NEARBY MARKET MODULE ══════════════ */
+.nearby-market-shell {
+  margin-top: 14px;
+  padding: 18px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  border-radius: 18px;
+}
+
+.nearby-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.nearby-status {
+  color: var(--text-secondary);
+  font-size: 0.86rem;
+}
+
+.manual-location-panel {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(130px, 1fr));
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.manual-location-panel label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+.manual-location-panel input {
+  border: 1px solid var(--border);
+  background: var(--input-bg);
+  color: var(--text-primary);
+  padding: 10px;
+  border-radius: 10px;
+}
+
+.nearby-map-container {
+  width: 100%;
+  min-height: 380px;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  overflow: hidden;
+  background: var(--bg-secondary);
+}
+
+.nearby-list-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 12px;
+}
+
+.nearby-market-card {
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 14px;
+  background: var(--surface);
+}
+
+.nearby-market-card h4 {
+  margin-bottom: 8px;
+}
+
+.nearby-market-card p {
+  color: var(--text-secondary);
+  font-size: 0.86rem;
+  margin-top: 4px;
+}
+
+.hidden {
+  display: none !important;
+}
+
+@media (max-width: 768px) {
+  .manual-location-panel {
+    grid-template-columns: 1fr;
+  }
+}

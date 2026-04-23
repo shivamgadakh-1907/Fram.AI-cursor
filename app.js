@@ -13,6 +13,14 @@
   let searchQuery = '';
   let pricePage = 0;
   const PRICE_PER_PAGE = 10;
+  let mapViewMode = 'map';
+  let userLocation = null;
+  let nearbyMarkets = [];
+  let selectedNearbyMarket = null;
+  let googleMap = null;
+  let googleMarkers = [];
+  let googleInfoWindow = null;
+  let mapsApiLoaded = false;
 
   // ── DOM Helpers ──
   const $ = (sel) => document.querySelector(sel);
@@ -46,6 +54,17 @@
   const priceNext = $('#priceNext');
   const headerTime = $('#headerTime');
   const stateCount = $('#stateCount');
+  const viewMapBtn = $('#viewMapBtn');
+  const viewListBtn = $('#viewListBtn');
+  const detectLocationBtn = $('#detectLocationBtn');
+  const locationStatus = $('#locationStatus');
+  const manualLocationPanel = $('#manualLocationPanel');
+  const manualLat = $('#manualLat');
+  const manualLng = $('#manualLng');
+  const applyManualLocationBtn = $('#applyManualLocationBtn');
+  const nearbyMapContainer = $('#nearbyMapContainer');
+  const nearbyListContainer = $('#nearbyListContainer');
+  const livePriceTableBody = $('#livePriceTableBody');
 
   // ═══════════════════════════════════════
   //  PARTICLE SYSTEM
@@ -127,6 +146,7 @@
     updateTime();
     setInterval(updateTime, 60000);
     setupScrollEffects();
+    initNearbyMarketsModule();
 
     // Set current year
     const yearEl = document.getElementById('currentYear');
@@ -483,8 +503,213 @@
     if (allMandis.length > 24) {
       const more = document.createElement('div');
       more.className = 'no-results';
-      more.textContent = `Showing 24 of ${allMandis.length} mandis. Select a state or use search to narrow results.`;
+      more.textContent = `Showing 24 of ${allMandis.length} marketplaces. Select a state or use search to narrow results.`;
       mandiGrid.appendChild(more);
+    }
+  }
+
+  // ═══════════════════════════════════════
+  //  NEARBY MARKETS + MAP
+  // ═══════════════════════════════════════
+  async function apiGet(url) {
+    const response = await fetch(url);
+    if (!response.ok) throw new Error(`API error: ${response.status}`);
+    return response.json();
+  }
+
+  async function initNearbyMarketsModule() {
+    if (!detectLocationBtn || !nearbyListContainer) return;
+    bindNearbyEvents();
+  }
+
+  function bindNearbyEvents() {
+    viewMapBtn.addEventListener('click', () => setNearbyViewMode('map'));
+    viewListBtn.addEventListener('click', () => setNearbyViewMode('list'));
+    detectLocationBtn.addEventListener('click', requestUserLocation);
+    applyManualLocationBtn.addEventListener('click', applyManualLocation);
+  }
+
+  function setNearbyViewMode(mode) {
+    mapViewMode = mode;
+    viewMapBtn.classList.toggle('active', mode === 'map');
+    viewListBtn.classList.toggle('active', mode === 'list');
+    nearbyMapContainer.classList.toggle('hidden', mode !== 'map');
+    nearbyListContainer.classList.toggle('hidden', mode !== 'list');
+  }
+
+  async function requestUserLocation() {
+    if (!navigator.geolocation) {
+      showToast('⚠️ Geolocation is not supported by this browser');
+      manualLocationPanel.classList.remove('hidden');
+      return;
+    }
+
+    locationStatus.textContent = 'Detecting your location...';
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const { latitude, longitude } = position.coords;
+        manualLocationPanel.classList.add('hidden');
+        await updateUserLocationAndMarkets(latitude, longitude, false);
+      },
+      () => {
+        locationStatus.textContent = 'Location permission denied. Please enter manual location.';
+        manualLocationPanel.classList.remove('hidden');
+        showToast('📍 Location denied, switched to manual location input');
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+    );
+  }
+
+  async function applyManualLocation() {
+    const lat = Number(manualLat.value);
+    const lng = Number(manualLng.value);
+    if (Number.isNaN(lat) || Number.isNaN(lng)) {
+      showToast('⚠️ Enter valid latitude and longitude');
+      return;
+    }
+    await updateUserLocationAndMarkets(lat, lng, true);
+  }
+
+  async function updateUserLocationAndMarkets(lat, lng, isManual) {
+    userLocation = { lat, lng };
+    locationStatus.textContent = `Location: ${lat.toFixed(4)}, ${lng.toFixed(4)} ${isManual ? '(manual)' : ''}`;
+    showToast('📍 Location updated. Fetching nearby marketplaces...');
+    await fetchNearbyMarkets();
+  }
+
+  async function fetchNearbyMarkets() {
+    if (!userLocation) return;
+    try {
+      const response = await apiGet(`/nearby-markets?lat=${userLocation.lat}&lng=${userLocation.lng}&radiusKm=100`);
+      nearbyMarkets = response.markets || [];
+      renderNearbyMarketsList();
+      await renderGoogleMap();
+      if (nearbyMarkets.length > 0) {
+        selectNearbyMarket(nearbyMarkets[0]);
+      } else {
+        livePriceTableBody.innerHTML = '<tr><td colspan="3" class="no-results">No marketplaces found within 100 km radius.</td></tr>';
+      }
+    } catch (error) {
+      showToast('⚠️ Failed to fetch nearby marketplaces');
+      locationStatus.textContent = 'Could not load nearby marketplaces right now.';
+    }
+  }
+
+  function renderNearbyMarketsList() {
+    if (!nearbyMarkets.length) {
+      nearbyListContainer.innerHTML = '<div class="no-results">No nearby marketplaces in 100 km radius.</div>';
+      return;
+    }
+    nearbyListContainer.innerHTML = nearbyMarkets.map((market) => `
+      <div class="nearby-market-card">
+        <h4>🏪 ${market.name}</h4>
+        <p>📍 ${market.address}</p>
+        <p>📞 ${market.phone || 'Not available'}</p>
+        <p>📏 ${market.distanceKm} km away</p>
+        <p>🌾 ${market.cropsTraded.join(', ')}</p>
+      </div>
+    `).join('');
+  }
+
+  function buildInfoCardHtml(market) {
+    return `
+      <div style="max-width:260px;padding:4px 2px;">
+        <h4 style="margin:0 0 8px 0;">${market.name}</h4>
+        <p style="margin:0 0 4px 0;">📍 ${market.address}</p>
+        <p style="margin:0 0 4px 0;">📞 ${market.phone || 'Not available'}</p>
+        <p style="margin:0 0 4px 0;">📏 ${market.distanceKm} km</p>
+        <p style="margin:0;">🌾 ${market.cropsTraded.join(', ')}</p>
+      </div>
+    `;
+  }
+
+  async function loadGoogleMapsApi() {
+    if (mapsApiLoaded || window.google?.maps) return true;
+    const cfg = await apiGet('/api/config');
+    if (!cfg.googleMapsApiKey) return false;
+    await new Promise((resolve, reject) => {
+      const script = document.createElement('script');
+      script.src = `https://maps.googleapis.com/maps/api/js?key=${cfg.googleMapsApiKey}&libraries=places`;
+      script.async = true;
+      script.defer = true;
+      script.onload = resolve;
+      script.onerror = reject;
+      document.head.appendChild(script);
+    });
+    mapsApiLoaded = true;
+    return true;
+  }
+
+  async function renderGoogleMap() {
+    const hasMaps = await loadGoogleMapsApi();
+    if (!hasMaps) {
+      nearbyMapContainer.innerHTML = '<div class="no-results" style="padding:18px">Google Maps key missing. Add `GOOGLE_MAPS_API_KEY` in `.env`.</div>';
+      return;
+    }
+
+    googleMap = new google.maps.Map(nearbyMapContainer, {
+      center: userLocation || { lat: 20.5937, lng: 78.9629 },
+      zoom: 7
+    });
+
+    googleInfoWindow = new google.maps.InfoWindow();
+    googleMarkers.forEach((marker) => marker.setMap(null));
+    googleMarkers = [];
+
+    if (userLocation) {
+      const userMarker = new google.maps.Marker({
+        position: userLocation,
+        map: googleMap,
+        title: 'Your Location',
+        icon: {
+          path: google.maps.SymbolPath.CIRCLE,
+          fillColor: '#2563eb',
+          fillOpacity: 1,
+          strokeColor: '#fff',
+          strokeWeight: 2,
+          scale: 8
+        }
+      });
+      googleMarkers.push(userMarker);
+    }
+
+    nearbyMarkets.forEach((market) => {
+      const marker = new google.maps.Marker({
+        position: { lat: market.lat, lng: market.lng },
+        map: googleMap,
+        title: market.name
+      });
+      marker.addListener('click', () => {
+        googleInfoWindow.setContent(buildInfoCardHtml(market));
+        googleInfoWindow.open(googleMap, marker);
+        selectNearbyMarket(market);
+      });
+      googleMarkers.push(marker);
+    });
+  }
+
+  async function selectNearbyMarket(market) {
+    selectedNearbyMarket = market;
+    await fetchLivePrices(market.id);
+  }
+
+  async function fetchLivePrices(marketId) {
+    try {
+      const response = await apiGet(`/live-prices?marketId=${encodeURIComponent(marketId)}`);
+      const prices = response.prices || [];
+      if (!prices.length) {
+        livePriceTableBody.innerHTML = '<tr><td colspan="3" class="no-results">No live prices found for this marketplace.</td></tr>';
+        return;
+      }
+      livePriceTableBody.innerHTML = prices.map((item) => `
+        <tr>
+          <td><strong>${item.crop}</strong></td>
+          <td class="price-column">₹${Number(item.price || 0).toLocaleString('en-IN')}</td>
+          <td>${new Date(item.updatedAt).toLocaleString('en-IN')}</td>
+        </tr>
+      `).join('');
+    } catch (error) {
+      livePriceTableBody.innerHTML = '<tr><td colspan="3" class="no-results">Failed to load live prices. Try again.</td></tr>';
     }
   }
 
