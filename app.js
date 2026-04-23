@@ -17,10 +17,8 @@
   let userLocation = null;
   let nearbyMarkets = [];
   let selectedNearbyMarket = null;
-  let googleMap = null;
-  let googleMarkers = [];
-  let googleInfoWindow = null;
-  let mapsApiLoaded = false;
+  let leafletMap = null;
+  let leafletMarkers = [];
 
   // ── DOM Helpers ──
   const $ = (sel) => document.querySelector(sel);
@@ -484,7 +482,7 @@
     const displayMandis = allMandis.slice(0, 24);
 
     if (displayMandis.length === 0) {
-      mandiGrid.innerHTML = '<div class="no-results">🔍 No mandis match your search.</div>';
+      mandiGrid.innerHTML = '<div class="no-results">🔍 No marketplaces match your search.</div>';
       return;
     }
 
@@ -535,6 +533,9 @@
     viewListBtn.classList.toggle('active', mode === 'list');
     nearbyMapContainer.classList.toggle('hidden', mode !== 'map');
     nearbyListContainer.classList.toggle('hidden', mode !== 'list');
+    if (mode === 'map' && leafletMap) {
+      setTimeout(() => leafletMap.invalidateSize(), 100);
+    }
   }
 
   async function requestUserLocation() {
@@ -561,13 +562,35 @@
   }
 
   async function applyManualLocation() {
-    const lat = Number(manualLat.value);
-    const lng = Number(manualLng.value);
-    if (Number.isNaN(lat) || Number.isNaN(lng)) {
-      showToast('⚠️ Enter valid latitude and longitude');
+    const manualCityBtn = document.getElementById('applyManualLocationBtn');
+    const manualCityInput = document.getElementById('manualCity');
+    const city = manualCityInput ? manualCityInput.value.trim() : '';
+
+    if (!city) {
+      showToast('⚠️ Please enter a valid city name');
       return;
     }
-    await updateUserLocationAndMarkets(lat, lng, true);
+    
+    manualCityBtn.disabled = true;
+    manualCityBtn.textContent = 'Searching...';
+
+    try {
+      const response = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(city)}&format=json&limit=1`);
+      const data = await response.json();
+
+      if (data && data.length > 0) {
+         const lat = Number(data[0].lat);
+         const lng = Number(data[0].lon);
+         await updateUserLocationAndMarkets(lat, lng, true);
+      } else {
+         showToast('⚠️ City not found. Please try another.');
+      }
+    } catch (e) {
+      showToast('⚠️ Error connecting to geocoding service');
+    } finally {
+      manualCityBtn.disabled = false;
+      manualCityBtn.textContent = 'Apply Location';
+    }
   }
 
   async function updateUserLocationAndMarkets(lat, lng, isManual) {
@@ -580,14 +603,14 @@
   async function fetchNearbyMarkets() {
     if (!userLocation) return;
     try {
-      const response = await apiGet(`/nearby-markets?lat=${userLocation.lat}&lng=${userLocation.lng}&radiusKm=100`);
+      const response = await apiGet(`/markets?lat=${userLocation.lat}&lng=${userLocation.lng}&radiusKm=50`);
       nearbyMarkets = response.markets || [];
       renderNearbyMarketsList();
-      await renderGoogleMap();
+      renderLeafletMap();
       if (nearbyMarkets.length > 0) {
         selectNearbyMarket(nearbyMarkets[0]);
       } else {
-        livePriceTableBody.innerHTML = '<tr><td colspan="3" class="no-results">No marketplaces found within 100 km radius.</td></tr>';
+        livePriceTableBody.innerHTML = '<tr><td colspan="4" class="no-results">No marketplaces found within 50 km radius.</td></tr>';
       }
     } catch (error) {
       showToast('⚠️ Failed to fetch nearby marketplaces');
@@ -623,69 +646,57 @@
     `;
   }
 
-  async function loadGoogleMapsApi() {
-    if (mapsApiLoaded || window.google?.maps) return true;
-    const cfg = await apiGet('/api/config');
-    if (!cfg.googleMapsApiKey) return false;
-    await new Promise((resolve, reject) => {
-      const script = document.createElement('script');
-      script.src = `https://maps.googleapis.com/maps/api/js?key=${cfg.googleMapsApiKey}&libraries=places`;
-      script.async = true;
-      script.defer = true;
-      script.onload = resolve;
-      script.onerror = reject;
-      document.head.appendChild(script);
-    });
-    mapsApiLoaded = true;
-    return true;
-  }
+  let markerClusterGroup = null;
 
-  async function renderGoogleMap() {
-    const hasMaps = await loadGoogleMapsApi();
-    if (!hasMaps) {
-      nearbyMapContainer.innerHTML = '<div class="no-results" style="padding:18px">Google Maps key missing. Add `GOOGLE_MAPS_API_KEY` in `.env`.</div>';
+  function renderLeafletMap() {
+    if (!window.L) {
+      nearbyMapContainer.innerHTML = '<div class="no-results" style="padding:18px">Leaflet failed to load. Check internet connection.</div>';
       return;
     }
 
-    googleMap = new google.maps.Map(nearbyMapContainer, {
-      center: userLocation || { lat: 20.5937, lng: 78.9629 },
-      zoom: 7
-    });
+    if (!leafletMap) {
+      leafletMap = L.map(nearbyMapContainer).setView(
+        userLocation ? [userLocation.lat, userLocation.lng] : [20.5937, 78.9629],
+        userLocation ? 9 : 5
+      );
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '&copy; OpenStreetMap contributors'
+      }).addTo(leafletMap);
+    } else {
+      leafletMap.setView([userLocation.lat, userLocation.lng], 9);
+    }
 
-    googleInfoWindow = new google.maps.InfoWindow();
-    googleMarkers.forEach((marker) => marker.setMap(null));
-    googleMarkers = [];
+    leafletMarkers.forEach((marker) => marker.remove());
+    leafletMarkers = [];
+    if (markerClusterGroup) {
+      leafletMap.removeLayer(markerClusterGroup);
+    }
+    
+    if (L.markerClusterGroup) {
+      markerClusterGroup = L.markerClusterGroup();
+    }
 
     if (userLocation) {
-      const userMarker = new google.maps.Marker({
-        position: userLocation,
-        map: googleMap,
-        title: 'Your Location',
-        icon: {
-          path: google.maps.SymbolPath.CIRCLE,
-          fillColor: '#2563eb',
-          fillOpacity: 1,
-          strokeColor: '#fff',
-          strokeWeight: 2,
-          scale: 8
-        }
-      });
-      googleMarkers.push(userMarker);
+      const userMarker = L.marker([userLocation.lat, userLocation.lng], { icon: L.icon({ iconUrl: 'https://cdn.rawgit.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png', shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png', iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34] }) })
+        .bindPopup('<strong>Your Location</strong>');
+      if (markerClusterGroup) leafletMap.addLayer(userMarker);
+      else userMarker.addTo(leafletMap);
+      leafletMarkers.push(userMarker);
     }
 
     nearbyMarkets.forEach((market) => {
-      const marker = new google.maps.Marker({
-        position: { lat: market.lat, lng: market.lng },
-        map: googleMap,
-        title: market.name
-      });
-      marker.addListener('click', () => {
-        googleInfoWindow.setContent(buildInfoCardHtml(market));
-        googleInfoWindow.open(googleMap, marker);
-        selectNearbyMarket(market);
-      });
-      googleMarkers.push(marker);
+      const marker = L.marker([market.lat, market.lng]);
+      marker.bindPopup(buildInfoCardHtml(market));
+      marker.on('click', () => selectNearbyMarket(market));
+      if (markerClusterGroup) markerClusterGroup.addLayer(marker);
+      else marker.addTo(leafletMap);
+      leafletMarkers.push(marker);
     });
+    
+    if (markerClusterGroup) {
+      leafletMap.addLayer(markerClusterGroup);
+    }
   }
 
   async function selectNearbyMarket(market) {
@@ -695,27 +706,31 @@
 
   async function fetchLivePrices(marketId) {
     try {
-      const response = await apiGet(`/live-prices?marketId=${encodeURIComponent(marketId)}`);
+      const response = await apiGet(`/prices?marketId=${encodeURIComponent(marketId)}`);
       const prices = response.prices || [];
       if (!prices.length) {
-        livePriceTableBody.innerHTML = '<tr><td colspan="3" class="no-results">No live prices found for this marketplace.</td></tr>';
+        livePriceTableBody.innerHTML = '<tr><td colspan="4" class="no-results">No live prices found for this marketplace.</td></tr>';
         return;
       }
       livePriceTableBody.innerHTML = prices.map((item) => `
         <tr>
           <td><strong>${item.crop}</strong></td>
           <td class="price-column">₹${Number(item.price || 0).toLocaleString('en-IN')}</td>
+          <td>${response.marketName || selectedNearbyMarket?.name || 'Unknown market'}</td>
           <td>${new Date(item.updatedAt).toLocaleString('en-IN')}</td>
         </tr>
       `).join('');
     } catch (error) {
-      livePriceTableBody.innerHTML = '<tr><td colspan="3" class="no-results">Failed to load live prices. Try again.</td></tr>';
+      livePriceTableBody.innerHTML = '<tr><td colspan="4" class="no-results">Failed to load live prices. Try again.</td></tr>';
     }
   }
 
   // ═══════════════════════════════════════
   //  CHAT SYSTEM
   // ═══════════════════════════════════════
+  window.attachedImageBase64 = null;
+  window.attachedImageMimeType = null;
+
   function sendChatMessage(text) {
     if (!text.trim()) return;
 
@@ -737,12 +752,24 @@
     chatMessages.appendChild(typingEl);
     chatMessages.scrollTop = chatMessages.scrollHeight;
 
-    // Simulate AI response delay
-    setTimeout(() => {
+    fetch('/ai', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prompt: text, imageBase64: window.attachedImageBase64, imageMimeType: window.attachedImageMimeType })
+    })
+    .then(r => r.json())
+    .then(data => {
       typingEl.remove();
-      const response = getAIResponse(text);
-      addMessage('ai', response);
-    }, 800 + Math.random() * 1200);
+      addMessage('ai', data.response || "Sorry, I couldn't process that.");
+      // Clear attachment after sending
+      const removeBtn = document.getElementById('chatRemoveImage');
+      if (removeBtn) removeBtn.click();
+    })
+    .catch(err => {
+      typingEl.remove();
+      addMessage('ai', "Error connecting to AI service.");
+      console.error(err);
+    });
   }
 
   function addMessage(type, content) {
@@ -902,7 +929,7 @@
     });
 
     // Category filter buttons
-    $$('.filter-btn').forEach(btn => {
+    $$('[data-category]').forEach(btn => {
       btn.addEventListener('click', () => {
         selectedCategory = btn.dataset.category;
         $$('.filter-btn').forEach(b => b.classList.remove('active'));
@@ -1099,6 +1126,71 @@
     }
   };
 
+  // Market Insights Render
+  function renderMarketInsights() {
+     let container = document.getElementById('insightsGrid');
+     if (!container) return;
+     let stateFilter = document.getElementById('insightsStateFilter').value;
+     
+     let html = '';
+     Object.keys(STATES_DATA).forEach(state => {
+         if (stateFilter !== 'all' && stateFilter !== state) return;
+         let mandisCount = STATES_DATA[state].mandis.length;
+         let topMandis = STATES_DATA[state].mandis.slice(0,3).map(m=>m.name).join(', ') || 'N/A';
+         html += `
+           <div class="insight-card">
+              <div class="state-name">${state}</div>
+              <div class="market-count">${mandisCount} Markets</div>
+              <div class="top-markets"><strong>Top:</strong> ${topMandis}</div>
+           </div>
+         `;
+     });
+     container.innerHTML = html;
+  }
+
   // ── Boot ──
-  document.addEventListener('DOMContentLoaded', init);
+  document.addEventListener('DOMContentLoaded', () => {
+    init();
+
+    // Bind AI Image Attachment Tool
+    let chatUploadBtn = document.getElementById('chatUploadBtn');
+    let chatFileInput = document.getElementById('chatFileInput');
+    if (chatUploadBtn) {
+      chatUploadBtn.addEventListener('click', () => chatFileInput.click());
+      chatFileInput.addEventListener('change', (e) => {
+        let file = e.target.files[0];
+        if (file && file.type.startsWith('image/')) {
+          let reader = new FileReader();
+          reader.onload = (ev) => {
+             window.attachedImageBase64 = ev.target.result;
+             window.attachedImageMimeType = file.type;
+             document.getElementById('chatAttachedImage').src = ev.target.result;
+             document.getElementById('attachedMediaPreview').classList.remove('hidden');
+          };
+          reader.readAsDataURL(file);
+        }
+      });
+      let chatRemoveImage = document.getElementById('chatRemoveImage');
+      if(chatRemoveImage) {
+          chatRemoveImage.addEventListener('click', () => {
+              window.attachedImageBase64 = null;
+              window.attachedImageMimeType = null;
+              chatFileInput.value = '';
+              document.getElementById('attachedMediaPreview').classList.add('hidden');
+          });
+      }
+    }
+
+    if (document.getElementById('insightsStateFilter')) {
+        let f = document.getElementById('insightsStateFilter');
+        Object.keys(STATES_DATA).sort().forEach(st => {
+            let opt = document.createElement('option');
+            opt.value = st; opt.textContent = st;
+            f.appendChild(opt);
+        });
+        f.addEventListener('change', renderMarketInsights);
+        renderMarketInsights();
+    }
+  });
+
 })();

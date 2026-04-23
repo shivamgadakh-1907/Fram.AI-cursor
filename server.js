@@ -4,6 +4,7 @@ const dotenv = require("dotenv");
 const path = require("path");
 const fs = require("fs");
 const axios = require("axios");
+const { GoogleGenerativeAI } = require("@google/generative-ai");
 
 dotenv.config();
 
@@ -12,7 +13,7 @@ const PORT = process.env.PORT || 3000;
 const CACHE_TTL_MS = 5 * 60 * 1000;
 
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '50mb' }));
 app.use(express.static(path.join(__dirname)));
 
 const marketplaces = JSON.parse(
@@ -42,17 +43,10 @@ function haversineDistanceKm(lat1, lon1, lat2, lon2) {
   return R * c;
 }
 
-app.get("/api/config", (req, res) => {
-  res.json({
-    googleMapsApiKey: process.env.GOOGLE_MAPS_API_KEY || "",
-    cacheTtlMinutes: 5
-  });
-});
-
-app.get("/nearby-markets", (req, res) => {
+function getMarketsHandler(req, res) {
   const lat = Number(req.query.lat);
   const lng = Number(req.query.lng);
-  const radiusKm = Math.max(50, Math.min(100, Number(req.query.radiusKm) || 100));
+  const radiusKm = Math.max(1, Math.min(50, Number(req.query.radiusKm) || 50));
 
   if (Number.isNaN(lat) || Number.isNaN(lng)) {
     return res.status(400).json({
@@ -91,7 +85,10 @@ app.get("/nearby-markets", (req, res) => {
   });
 
   return res.json({ ...payload, source: "fresh" });
-});
+}
+
+app.get("/markets", getMarketsHandler);
+app.get("/nearby-markets", getMarketsHandler);
 
 const fallbackPriceData = [
   { crop: "Wheat", minPrice: 2200, maxPrice: 2480, modalPrice: 2360 },
@@ -144,7 +141,7 @@ async function fetchAgmarknetData(marketName, crops) {
   return mapped;
 }
 
-app.get("/live-prices", async (req, res) => {
+async function getPricesHandler(req, res) {
   const marketId = req.query.marketId;
   if (!marketId) {
     return res.status(400).json({ status: "error", message: "marketId is required" });
@@ -205,6 +202,41 @@ app.get("/live-prices", async (req, res) => {
       source: "fallback",
       warning: "Agmarknet fetch unavailable; serving fallback dataset."
     });
+  }
+}
+
+app.get("/prices", getPricesHandler);
+app.get("/live-prices", getPricesHandler);
+
+app.post("/ai", async (req, res) => {
+  try {
+    const { prompt, imageBase64, imageMimeType } = req.body;
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) {
+      return res.status(500).json({ error: "Gemini API key missing" });
+    }
+
+    const genAI = new GoogleGenerativeAI(apiKey);
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+
+    const parts = [{ text: prompt }];
+
+    if (imageBase64 && imageMimeType) {
+      parts.unshift({
+        inlineData: {
+          data: imageBase64.replace(/^data:image\/\w+;base64,/, ''),
+          mimeType: imageMimeType
+        }
+      });
+    }
+
+    const result = await model.generateContent(parts);
+    const responseText = result.response.text();
+    
+    return res.json({ response: responseText });
+  } catch (error) {
+    console.error("AI Error:", error);
+    return res.status(500).json({ error: "Failed to generate AI response" });
   }
 });
 

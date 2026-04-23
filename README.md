@@ -6,7 +6,6 @@
    - `npm install`
 2. Create environment file:
    - Copy `.env.example` to `.env`
-   - Set `GOOGLE_MAPS_API_KEY`
    - Optionally set `AGMARKNET_API_KEY`
 3. Start app:
    - `npm start`
@@ -15,25 +14,21 @@
 
 ## New APIs
 
-- `GET /nearby-markets?lat=<lat>&lng=<lng>&radiusKm=100`
-- `GET /live-prices?marketId=<marketId>`
-- `GET /api/config`
+- `GET /markets?lat=<lat>&lng=<lng>&radiusKm=50`
+- `GET /prices?marketId=<marketId>`
+
+Compatibility aliases:
+- `GET /nearby-markets`
+- `GET /live-prices`
 
 Both market APIs cache responses for 5 minutes.
 
-## Google Maps Setup
+## Map Integration (Free)
 
-1. In Google Cloud Console, enable:
-   - Maps JavaScript API
-   - Places API
-2. Create an API key.
-3. Restrict key by:
-   - HTTP referrers (recommended)
-   - API restrictions (Maps JavaScript API, Places API)
-4. Put the key in `.env`:
-   - `GOOGLE_MAPS_API_KEY=your_key_here`
+- Map uses Leaflet.js + OpenStreetMap tiles.
+- No API key required.
 
 ## Agmarknet/Data.gov Source
 
-- If `AGMARKNET_API_KEY` is configured, `/live-prices` tries to fetch Agmarknet-linked records via data.gov.in.
+- If `AGMARKNET_API_KEY` is configured, `/prices` tries to fetch Agmarknet-linked records via data.gov.in.
 - If fetch fails, API serves cached data or fallback dataset to keep UI functional.

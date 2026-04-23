@@ -7,6 +7,9 @@
   <meta name="keywords" content="farming, agriculture, India, crops, AI, smart farming, mandi prices, crop disease">
   <meta name="author" content="Farm AI Builder">
   <title>Farm AI Builder — Smart Farming for India 🌾</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.Default.css">
   <link rel="stylesheet" href="styles.css">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌾</text></svg>">
 </head>
@@ -100,6 +103,10 @@
       <button class="nav-tab active" data-page="dashboard" id="nav-dashboard">
         <span class="tab-icon">📊</span>
         <span class="tab-label">Dashboard</span>
+      </button>
+      <button class="nav-tab" data-page="insights" id="nav-insights">
+        <span class="tab-icon">📈</span>
+        <span class="tab-label">Insights</span>
       </button>
       <button class="nav-tab" data-page="assistant" id="nav-assistant">
         <span class="tab-icon">🤖</span>
@@ -209,7 +216,7 @@
               <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
             </svg>
           </span>
-          <input type="text" id="searchInput" placeholder="Search states, crops, or mandis..." autocomplete="off">
+          <input type="text" id="searchInput" placeholder="Search states, crops, or marketplaces..." autocomplete="off">
           <kbd class="search-kbd">Ctrl+K</kbd>
         </div>
         <div class="filter-group">
@@ -251,7 +258,7 @@
         <div class="section-header">
           <div>
             <h2 class="section-title"><span class="icon">💹</span> Market Prices</h2>
-            <p class="section-subtitle">Latest MSP & Mandi prices (₹ per quintal)</p>
+            <p class="section-subtitle">Latest MSP & market prices (₹ per quintal)</p>
           </div>
         </div>
         <div class="price-table-container">
@@ -283,7 +290,7 @@
       <div class="section-header">
         <div>
           <h2 class="section-title"><span class="icon">🏪</span> Marketplaces</h2>
-          <p class="section-subtitle">Existing marketplace directory (formerly mandi locations)</p>
+          <p class="section-subtitle">Marketplace directory across Indian states</p>
         </div>
       </div>
       <div class="mandi-grid" id="mandiGrid">
@@ -293,7 +300,7 @@
       <!-- Nearby Markets -->
       <div class="section-header">
         <div>
-          <h2 class="section-title"><span class="icon">📍</span> Nearby Markets</h2>
+          <h2 class="section-title"><span class="icon">📍</span> Nearby Marketplaces</h2>
           <p class="section-subtitle">Location-based nearby marketplace discovery with live prices</p>
         </div>
       </div>
@@ -305,15 +312,11 @@
           <span class="nearby-status" id="locationStatus">Location not detected yet.</span>
         </div>
         <div class="manual-location-panel hidden" id="manualLocationPanel">
-          <label>
-            Latitude
-            <input type="number" step="0.000001" id="manualLat" placeholder="e.g. 28.6139">
+          <label style="width: 100%;">
+            City / Location Name
+            <input type="text" id="manualCity" class="chat-input" placeholder="e.g. Pune, Maharashtra" style="margin-top: 6px;">
           </label>
-          <label>
-            Longitude
-            <input type="number" step="0.000001" id="manualLng" placeholder="e.g. 77.2090">
-          </label>
-          <button class="filter-btn" id="applyManualLocationBtn">Apply Location</button>
+          <button class="filter-btn" id="applyManualLocationBtn" style="white-space: nowrap;">Apply Location</button>
         </div>
         <div id="nearbyMapContainer" class="nearby-map-container"></div>
         <div id="nearbyListContainer" class="nearby-list-container hidden"></div>
@@ -333,16 +336,38 @@
               <tr>
                 <th>Crop</th>
                 <th>Price (₹/qtl)</th>
+                <th>Market</th>
                 <th>Last Updated</th>
               </tr>
             </thead>
             <tbody id="livePriceTableBody">
-              <tr><td colspan="3" class="no-results">Select a nearby marketplace to view live prices.</td></tr>
+              <tr><td colspan="4" class="no-results">Select a nearby marketplace to view live prices.</td></tr>
             </tbody>
           </table>
         </div>
       </div>
 
+    </section>
+
+    <!-- ────── MARKET INSIGHTS PAGE ────── -->
+    <section class="page" id="page-insights">
+      <div class="welcome-hero">
+        <div class="hero-badge">📈 Market Analysis</div>
+        <h1><span class="gradient-text">Market Insights</span></h1>
+        <p>Explore marketplace distribution across Indian states and see top markets.</p>
+      </div>
+      
+      <div class="controls-bar" style="margin-bottom: 2rem;">
+        <div class="filter-group">
+          <select id="insightsStateFilter" class="chat-input" style="width: 200px;">
+            <option value="all">🌐 All States</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="insights-grid states-grid" id="insightsGrid">
+        <!-- Filled dynamically -->
+      </div>
     </section>
 
     <!-- ────── AI ASSISTANT PAGE ────── -->
@@ -400,8 +425,19 @@
             <button class="quick-chip" data-query="How to start organic farming?">🌿 Organic</button>
           </div>
 
-          <div class="chat-input-area">
-            <input type="text" class="chat-input" id="chatInput" placeholder="Ask a farming question..." autocomplete="off">
+          <div class="chat-input-area" id="chatInputArea" style="position:relative;">
+            <div id="attachedMediaPreview" class="hidden" style="position:absolute; bottom:calc(100% + 10px); left: 0; background: var(--bg-card); padding: 8px; border-radius: 12px; border: 1px solid var(--border); display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
+                <img id="chatAttachedImage" src="" style="height: 50px; width: 50px; object-fit: cover; border-radius: 6px;">
+                <button id="chatRemoveImage" style="background:none; border:none; color:var(--text-muted); cursor:pointer; font-size:16px;">✕</button>
+            </div>
+            <button class="chat-tool-btn" id="chatMicBtn" title="Use Microphone">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="22"></line></svg>
+            </button>
+            <button class="chat-tool-btn" id="chatUploadBtn" title="Upload Image">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+            </button>
+            <input type="file" id="chatFileInput" accept="image/*" style="display:none">
+            <input type="text" class="chat-input" id="chatInput" placeholder="Ask Farm AI..." autocomplete="off">
             <button class="chat-send-btn" id="chatSend" title="Send">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                 <path d="m22 2-7 20-4-9-9-4z"/><path d="m22 2-11 11"/>
@@ -464,6 +500,8 @@
   </footer>
 
   <!-- Scripts -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  <script src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/leaflet.markercluster.js" crossorigin=""></script>
   <script src="data.js"></script>
   <script src="app.js"></script>
 </body>
